@@ -1,0 +1,159 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+<style>
+    .chart-container {
+        width: 100%;
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .chart-wrapper {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+        color: #333;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chart-container">
+    <h1>Thống kê Người dùng và Bài viết</h1>
+
+    <div class="stats-grid">
+        <!-- Posts Statistics -->
+        <div class="chart-wrapper">
+            <h2>Bài viết theo tháng</h2>
+            <canvas id="postsMonthChart"></canvas>
+        </div>
+
+        <div class="chart-wrapper">
+            <h2>Bài viết theo quý</h2>
+            <canvas id="postsQuarterChart"></canvas>
+        </div>
+
+        <div class="chart-wrapper">
+            <h2>Bài viết theo năm</h2>
+            <canvas id="postsYearChart"></canvas>
+        </div>
+
+        <!-- Users Statistics -->
+        <div class="chart-wrapper">
+            <h2>Người dùng theo tháng</h2>
+            <canvas id="usersMonthChart"></canvas>
+        </div>
+
+        <div class="chart-wrapper">
+            <h2>Người dùng theo quý</h2>
+            <canvas id="usersQuarterChart"></canvas>
+        </div>
+
+        <div class="chart-wrapper">
+            <h2>Người dùng theo năm</h2>
+            <canvas id="usersYearChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chartColors = {
+        posts: {
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)'
+        },
+        users: {
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)'
+        }
+    };
+
+    function createChart(canvasId, data, label, colors) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+
+        return new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.map(item => item.label),
+                datasets: [{
+                    label: label,
+                    data: data.map(item => item.count),
+                    backgroundColor: colors.backgroundColor,
+                    borderColor: colors.borderColor,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: label
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    try {
+        // Parse JSON data
+        const data = {
+            posts: {
+                month: JSON.parse('{{ posts_by_month|safe }}'),
+                quarter: JSON.parse('{{ posts_by_quarter|safe }}'),
+                year: JSON.parse('{{ posts_by_year|safe }}')
+            },
+            users: {
+                month: JSON.parse('{{ users_by_month|safe }}'),
+                quarter: JSON.parse('{{ users_by_quarter|safe }}'),
+                year: JSON.parse('{{ users_by_year|safe }}')
+            }
+        };
+
+        // Create charts for posts
+        createChart('postsMonthChart', data.posts.month, 'Số lượng bài viết theo tháng', chartColors.posts);
+        createChart('postsQuarterChart', data.posts.quarter, 'Số lượng bài viết theo quý', chartColors.posts);
+        createChart('postsYearChart', data.posts.year, 'Số lượng bài viết theo năm', chartColors.posts);
+
+        // Create charts for users
+        createChart('usersMonthChart', data.users.month, 'Số lượng người dùng theo tháng', chartColors.users);
+        createChart('usersQuarterChart', data.users.quarter, 'Số lượng người dùng theo quý', chartColors.users);
+        createChart('usersYearChart', data.users.year, 'Số lượng người dùng theo năm', chartColors.users);
+    } catch (error) {
+        console.error('Lỗi khi tạo biểu đồ:', error);
+    }
+});
+</script>
+{% endblock %}
